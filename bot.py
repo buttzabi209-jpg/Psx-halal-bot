@@ -1,5 +1,5 @@
 import os
-from twilio.rest import Client
+import requests
 
 # PSX Core Halal (KMI-30 / Meezan Approved) Watchlist for Monthly Holding
 HALAL_HOLDING_STOCKS = {
@@ -24,21 +24,24 @@ def generate_halal_report():
     report += "⚠️ *Reminder: Automated research complete. Final buy/sell decision is 100% yours.*"
     return report
 
-def send_whatsapp_message():
-    account_sid = os.environ.get('TWILIO_ACCOUNT_SID')
-    auth_token = os.environ.get('TWILIO_AUTH_TOKEN')
-    to_whatsapp = os.environ.get('MY_WHATSAPP_NUMBER')      
-    from_whatsapp = os.environ.get('TWILIO_WHATSAPP_NUMBER') 
-
-    client = Client(account_sid, auth_token)
-    message_body = generate_halal_report()
-
-    message = client.messages.create(
-        body=message_body,
-        from_=from_whatsapp,
-        to=to_whatsapp
-    )
-    print(f"WhatsApp Message Sent Successfully! SID: {message.sid}")
+def send_telegram_message():
+    token = os.environ.get('TELEGRAM_BOT_TOKEN')
+    chat_id = os.environ.get('TELEGRAM_CHAT_ID')
+    
+    message = generate_halal_report()
+    url = f"https://api.telegram.org/bot{token}/sendMessage"
+    
+    payload = {
+        "chat_id": chat_id,
+        "text": message,
+        "parse_mode": "Markdown"
+    }
+    
+    response = requests.post(url, json=payload)
+    if response.status_code == 200:
+        print("Telegram Message Sent Successfully!")
+    else:
+        print(f"Failed to send message: {response.text}")
 
 if __name__ == "__main__":
-    send_whatsapp_message()
+    send_telegram_message()
